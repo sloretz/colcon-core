@@ -7,14 +7,15 @@ import os
 logging.basicConfig()
 colcon_logger = logging.getLogger('colcon')
 
-try:
-    import coloredlogs
-except ImportError:  # pragma: no cover
-    pass
-else:
-    log_format = os.environ.get(
-        'COLOREDLOGS_LOG_FORMAT', '%(name)s %(levelname)s %(message)s')
-    coloredlogs.install(level=1, logger=colcon_logger, fmt=log_format)
+if not bool(os.environ.get('NO_COLOR')):
+    try:
+        import coloredlogs
+    except ImportError:  # pragma: no cover
+        pass
+    else:
+        log_format = os.environ.get(
+            'COLOREDLOGS_LOG_FORMAT', '%(name)s %(levelname)s %(message)s')
+        coloredlogs.install(level=1, logger=colcon_logger, fmt=log_format)
 
 
 def set_logger_level_from_env(logger, env_name):
