@@ -64,13 +64,28 @@ class PythonBuildTask(TaskExtensionPoint):
             # to avoid placing any files in the source space
             cmd = [
                 executable, 'setup.py',
-                'egg_info', '--egg-base', args.build_base,
-                'build', '--build-base', os.path.join(
-                    args.build_base, 'build'),
-                'install', '--prefix', args.install_base,
-                '--record', os.path.join(args.build_base, 'install.log'),
+                'bdist_wheel', '--bdist-dir', os.path.join(
+                    args.build_base, 'bdist'),
+                '--dist-dir', os.path.join(args.build_base, 'dist'),
+                # 'install', '--prefix', args.install_base,
+                # '--record', os.path.join(args.build_base, 'install.log'),
                 # prevent installation of dependencies specified in setup.py
-                '--single-version-externally-managed',
+                # '--single-version-externally-managed',
+            ]
+            self._append_install_layout(args, cmd)
+            rc = await check_call(self.context, cmd, cwd=args.path, env=env)
+            if rc and rc.returncode:
+                return rc.returncode
+
+            wheel_path = os.path.join(args.build_base, 'dist')
+            wheel = None
+            for filename in os.listdir(wheel_path):
+                if filename.endswith('.whl'):
+                    wheel = os.path.abspath(os.path.join(wheel_path, filename))
+                    break
+            assert wheel
+            cmd = [
+                executable, '-m', 'pip', 'install', '--no-deps', '--root', args.install_base, '--prefix', '.', '--upgrade', '--force-reinstall', wheel
             ]
             self._append_install_layout(args, cmd)
             rc = await check_call(self.context, cmd, cwd=args.path, env=env)
